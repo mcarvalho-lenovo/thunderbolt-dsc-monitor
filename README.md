@@ -1,21 +1,29 @@
 # Thunderbolt DSC Monitor Setup
 
-This repository helps automatically **monitor Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo docks** with a **daisy chain setup**, where you sometimes cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
+This repository helps automatically **monitor Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
+
+## Daisy-Chain Scenarios
+
+### 1. Daisy Chain Does Not Work (Black Screen)
+![Black Screen](docs/black-screen.jpg)
+
+If you see a **black screen** on your second monitor, it often means the dock cannot provide enough bandwidth without DSC.
+
+### 2. Daisy Chain Works But With One Monitor at 30Hz
+![30Hz Limit](docs/30Hz.jpg)
+
+You might get a picture on both monitors, but one panel is limited to **30Hz**. This is usually a bandwidth constraint.
+
+### 3. Daisy Chain Fully Functional at 60Hz
+![Both Monitors at 60Hz](docs/60Hz.jpg)
+
+After **running the DSC script**, both external monitors can operate at **60Hz**, thanks to the **reduced bandwidth usage** when DSC is enabled.
 
 ## How It Works
 
 - **`setup_tbt_monitor.sh`** installs dependencies, copies `monitor_tbt.py` and `dsc.py` into `/opt/tbt-monitor/`, creates a systemd service (`tbt-monitor.service`), and archives the two files into a `.tar.gz`.
 - **`monitor_tbt.py`** listens for Thunderbolt hot-plug events. When a device is plugged in, it calls `dsc.py`.
-- **`dsc.py`** reads from DPCD address `0x160` (commonly associated with DSC). If DSC is off (`0`), it writes `1` to enable DSC, which can address the inability to run two displays at 60Hz on certain docks (e.g., Lenovo) in a daisy chain configuration.
-
-## Why This Helps
-
-Many users encounter a limitation with **daisy-chained monitors** on certain docks:  
-- Without DSC, you may only get **30Hz** on dual-monitor daisy chains.  
-- By enabling DSC at the panel level (via `dsc.py`), the link bandwidth usage is reduced, allowing both external monitors to operate at **60Hz**.
-
-> **Warning**  
-> Toggling DSC via DPCD may conflict with the kernel’s own DP link management. Only use this approach if you are comfortable adjusting hardware registers directly.
+- **`dsc.py`** reads from DPCD address `0x160` (commonly associated with DSC). If DSC is off (`0`), it writes `1` to enable DSC, potentially fixing black screen or 30Hz limitations.
 
 ## Setup Instructions
 
