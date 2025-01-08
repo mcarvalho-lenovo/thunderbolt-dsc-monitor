@@ -31,3 +31,6 @@ After **running the DSC script**, both external monitors can operate at **60Hz**
 2. **Make the setup script executable**:
    ```bash
    chmod +x setup_tbt_monitor.sh
+3. **Run the script with sudo**
+   ```bash
+   sudo ./setup_tbt_monitor.sh
