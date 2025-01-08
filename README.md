@@ -10,12 +10,12 @@ This repository helps automatically **monitor Thunderbolt hot-plug events** and 
 If you see a **black screen** on your second monitor, it often means the dock cannot provide enough bandwidth without DSC.
 
 ### 2. Daisy Chain Works But With One Monitor at 30Hz
-![30Hz Limit](docs/30Hz.jpg)
+![30Hz Limit](docs/30hz.jpg)
 
 You might get a picture on both monitors, but one panel is limited to **30Hz**. This is usually a bandwidth constraint.
 
 ### 3. Daisy Chain Fully Functional at 60Hz
-![Both Monitors at 60Hz](docs/60Hz.jpg)
+![Both Monitors at 60Hz](docs/60hz.jpg)
 
 After **running the DSC script**, both external monitors can operate at **60Hz**, thanks to the **reduced bandwidth usage** when DSC is enabled.
 
