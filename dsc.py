@@ -6,14 +6,19 @@ import os
 import subprocess
 from pyudev import Context
 
-def read_and_update_dpcd_value(f, address, device_name):
+def read_and_update_dpcd_value(f, device_name):
     """Reads the DPCD value at the given address and writes 1 if it is 0."""
-    f.seek(address)
+    f.seek(0x160)
     value = f.read(1)
     
+    print(f"Device {device_name}: DSC value read at address 0x160 is {value.hex()}.")
+    
     if value == b'\x00':
-        f.seek(address)
+        f.seek(0x160)
         f.write(b'\x01')
+        f.seek(0x160)
+        value = f.read(1)
+        print(f"After writing: {value.hex()}")
         print(f"Device {device_name}: DSC bit was 0 and has been changed to 1.")
         return True
     else:
@@ -61,7 +66,10 @@ def get_connected_gpus():
     return connected_gpus
 
 if __name__ == "__main__":
+
     connected_gpus = get_connected_gpus()  # Get only the connected GPUs
+
+    print(f"Connected GPUs: {connected_gpus}")  # Debug output
 
     gpus = discover_gpu(connected_gpus)  # Discover all GPUs
     
@@ -73,11 +81,10 @@ if __name__ == "__main__":
     # Process only the connected GPUs
     for gpu in gpus:
         device_name = gpu
-        
         try:
             with open(gpu, "r+b") as f:
                 try:
-                    if read_and_update_dpcd_value(f, 0x160, device_name):
+                    if read_and_update_dpcd_value(f, device_name):
                         changed_devices.append(device_name)
                 except OSError as e:
                     continue
