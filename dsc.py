@@ -72,20 +72,19 @@ if __name__ == "__main__":
 
     # Process only the connected GPUs
     for gpu in gpus:
-        if gpu in connected_gpus:
-            device_name = gpu
-            
-            try:
-                with open(gpu, "r+b") as f:
-                    try:
-                        if read_and_update_dpcd_value(f, 0x160, device_name):
-                            changed_devices.append(device_name)
-                    except OSError as e:
-                        continue
-            except PermissionError:
-                sys.exit("Run as root")
-            except OSError as e:
-                continue
+        device_name = gpu
+        
+        try:
+            with open(gpu, "r+b") as f:
+                try:
+                    if read_and_update_dpcd_value(f, 0x160, device_name):
+                        changed_devices.append(device_name)
+                except OSError as e:
+                    continue
+        except PermissionError:
+            sys.exit("Run as root")
+        except OSError as e:
+            continue
 
     if changed_devices:
         print("\nDevices with DSC bit changed to 1:")
