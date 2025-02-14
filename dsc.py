@@ -1,82 +1,95 @@
-"""
-dsc.py
-
-Toggles DSC at DPCD address 0x160 on eDP panels via drm_dp_aux_dev.
-If the value is 0, writes 1; if it's already 1, does nothing.
-"""
+#!/usr/bin/python3
+# SPDX-License-Identifier: MIT
+"""DSC identification script for AMD systems"""
 import sys
 import os
+import subprocess
+from pyudev import Context
 
-DSC_SUPPORT = {
-    0: "DSC Off",
-    1: "DSC On",
-}
-
-def decode_dsc(f):
-    f.seek(0x160)
-    data = f.read(1)
-    if len(data) < 1:
-        print("Could not read DPCD[0x160].")
-        return None
-    val = data[0]
-    desc = DSC_SUPPORT.get(val, f"Unknown (0x{val:02X})")
-    print(f"○ Current DSC value: {desc} (0x{val:02X})")
-    return val
-
-def enable_dsc_if_off(f):
-    current_val = decode_dsc(f)
-    if current_val is None:
-        return
-    if current_val == 0:
-        print("DSC is off; enabling DSC by writing 1 to DPCD[0x160].")
-        f.seek(0x160)
-        f.write(bytes([1]))
-        print("○ DSC write complete.")
-    elif current_val == 1:
-        print("DSC is already on; nothing to do.")
+def read_and_update_dpcd_value(f, address, device_name):
+    """Reads the DPCD value at the given address and writes 1 if it is 0."""
+    f.seek(address)
+    value = f.read(1)
+    
+    if value == b'\x00':
+        f.seek(address)
+        f.write(b'\x01')
+        print(f"Device {device_name}: DSC bit was 0 and has been changed to 1.")
+        return True
     else:
-        print(f"DSC is in an unknown state (0x{current_val:02X}); leaving as is.")
+        print(f"Device {device_name}: DSC bit was already 1.")
+        return False
 
-def get_dmcub():
-    base = "/sys/kernel/debug/dri"
-    if not os.path.isdir(base):
-        return
-    for num in range(0, 10):
-        fw_info = os.path.join(base, str(num), "amdgpu_firmware_info")
-        if not os.path.exists(fw_info):
-            continue
-        with open(fw_info, "r") as f:
-            for line in f:
-                if "DMCUB" in line:
-                    version = line.strip().split()[-1]
-                    print(f"DRI device {num} DMCUB F/W version: {version}")
-
-def discover_gpu():
-    try:
-        from pyudev import Context
-    except ModuleNotFoundError:
-        sys.exit("Missing pyudev, please install it (e.g., sudo pip3 install pyudev).")
+def discover_gpu(connected_gpus):
+    """Discover all GPUs with drm_dp_aux_dev subsystem."""
     gpus = []
+    
+    if not isinstance(connected_gpus, (list, set)):
+        raise ValueError("connected_gpus must be a list or set.")
+    
     context = Context()
+    
+    # Discover the GPU devices with drm_dp_aux_dev
     for dev in context.list_devices(subsystem="drm_dp_aux_dev"):
+        newDev = str(dev).split("/")[-2]
+        
         if "eDP" in dev.sys_path:
+            continue
+        
+        if len(newDev) > 4 and any(connected_gpu in newDev for connected_gpu in connected_gpus):
             gpus.append(dev.device_node)
+    
     return gpus
 
+def get_connected_gpus():
+    """Filter GPUs by their connection status."""
+    connected_gpus = []
+    
+    try:
+        result = subprocess.check_output('for dev in /sys/class/drm/*/status; do echo "$(basename $(dirname $dev)) - $(cat $dev)"; done', shell=True, text=True)
+    except subprocess.CalledProcessError as e:
+        sys.exit(f"Error running shell command: {e}")
+    
+    for line in result.splitlines():
+        device, status = line.split(" - ")
+        if "connected" == status and "eDP" not in device:
+            connected_gpus.append(device)
+    
+    if not connected_gpus:
+        sys.exit("No connected monitors found.")
+    
+    return connected_gpus
+
 if __name__ == "__main__":
-    gpus = discover_gpu()
-    if not gpus:
-        sys.exit("Failed to find any /dev/drm_dp_aux* device node for eDP.")
+    connected_gpus = get_connected_gpus()  # Get only the connected GPUs
 
-    get_dmcub()
+    gpus = discover_gpu(connected_gpus)  # Discover all GPUs
+    
+    if not connected_gpus:
+        sys.exit("No connected GPUs found.")
+    
+    changed_devices = [] 
 
+    # Process only the connected GPUs
     for gpu in gpus:
-        print(f"\nExamining GPU AUX node: {gpu}")
-        try:
-            with open(gpu, "r+b") as f:
-                try:
-                    enable_dsc_if_off(f)
-                except OSError:
-                    print("Could not read/write DPCD. If the panel is off, turn it on and try again.")
-        except PermissionError:
-            sys.exit("Permission denied. Please run as root or use sudo.")
+        if gpu in connected_gpus:
+            device_name = gpu
+            
+            try:
+                with open(gpu, "r+b") as f:
+                    try:
+                        if read_and_update_dpcd_value(f, 0x160, device_name):
+                            changed_devices.append(device_name)
+                    except OSError as e:
+                        continue
+            except PermissionError:
+                sys.exit("Run as root")
+            except OSError as e:
+                continue
+
+    if changed_devices:
+        print("\nDevices with DSC bit changed to 1:")
+        for device in changed_devices:
+            print(f"- {device}")
+    else:
+        print("\nNo devices had the DSC bit changed.")
