@@ -16,9 +16,6 @@ def read_and_update_dpcd_value(f, device_name):
     if value == b'\x00':
         f.seek(0x160)
         f.write(b'\x01')
-        f.seek(0x160)
-        value = f.read(1)
-        print(f"After writing: {value.hex()}")
         print(f"Device {device_name}: DSC bit was 0 and has been changed to 1.")
         return True
     else:
