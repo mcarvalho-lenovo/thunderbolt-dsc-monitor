@@ -23,7 +23,7 @@ def read_and_update_dpcd_value(f, device_name):
         return False
 
 def discover_gpu(connected_gpus):
-    """Discover all GPUs with drm_dp_aux_dev subsystem."""
+    """Discover all Cards with drm_dp_aux_dev subsystem."""
     gpus = []
     
     if not isinstance(connected_gpus, (list, set)):
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     connected_gpus = get_connected_gpus()  # Get only the connected GPUs
 
-    print(f"Connected GPUs: {connected_gpus}")  # Debug output
+    print(f"Connected Cards: {connected_gpus}")  # Debug output
 
     gpus = discover_gpu(connected_gpus)  # Discover all GPUs
     
