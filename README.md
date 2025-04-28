@@ -21,7 +21,7 @@ After **running the DSC script**, both external monitors can operate at **60Hz**
 
 ## How It Works
 
-- **`setup_tbt_hpd_watcher_service.sh`** installs dependencies, copies `tbt_watcher.py` and `dsc.py` into `/opt/tbt-monitor/`, creates a systemd service (`tbt-monitor.service`), and archives the two files into a `.tar.gz`.
+- **`setup_tbt_hpd_watcher_service.sh`** installs dependencies, copies `tbt_watcher.py` and `dsc.py` into `/opt/tbt-watcher/`, creates a systemd service (`tbt-watcher.service`), and archives the two files into a `.tar.gz`.
 - **`tbt_watcher.py`** listens for Thunderbolt hot-plug events. When a device is plugged in, it calls `dsc.py`.
 - **`dsc.py`** reads from DPCD address `0x160` (commonly associated with DSC). If DSC is off (`0`), it writes `1` to enable DSC, potentially fixing black screen or 30Hz limitations.
 
