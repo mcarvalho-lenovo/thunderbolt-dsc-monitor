@@ -1,98 +1,99 @@
 #!/usr/bin/python3
 # SPDX-License-Identifier: MIT
-"""DSC identification script for AMD systems"""
+"""DSC bit value checker and enabler for daisy-chained external monitors"""
+
 import sys
 import os
-import subprocess
-from pyudev import Context
+import glob
 
-def read_and_update_dpcd_value(f, device_name):
-    """Reads the DPCD value at the given address and writes 1 if it is 0."""
+DSC_FLAGS = {
+    0: "DSC Not Supported",
+    1: "DSC Supported",
+}
+
+def read_dsc_support(f):
+    """Reads 0x160 DPCD register to check DSC support."""
     f.seek(0x160)
-    value = f.read(1)
-    
-    print(f"Device {device_name}: DSC value read at address 0x160 is {value.hex()}.")
-    
-    if value == b'\x00':
-        f.seek(0x160)
-        f.write(b'\x01')
-        print(f"Device {device_name}: DSC bit was 0 and has been changed to 1.")
-        return True
-    else:
-        print(f"Device {device_name}: DSC bit was already 1.")
-        return False
+    val = int.from_bytes(f.read(1), "little")
+    supported = val & 0x01  # Bit 0 = DSC supported
+    return supported, val
 
-def discover_gpu(connected_gpus):
-    """Discover all Cards with drm_dp_aux_dev subsystem."""
-    gpus = []
-    
-    if not isinstance(connected_gpus, (list, set)):
-        raise ValueError("connected_gpus must be a list or set.")
-    
-    context = Context()
-    
-    # Discover the GPU devices with drm_dp_aux_dev
-    for dev in context.list_devices(subsystem="drm_dp_aux_dev"):
-        newDev = str(dev).split("/")[-2]
-        
-        if "eDP" in dev.sys_path:
-            continue
-        
-        if len(newDev) > 4 and any(connected_gpu in newDev for connected_gpu in connected_gpus):
-            gpus.append(dev.device_node)
-    
-    return gpus
-
-def get_connected_gpus():
-    """Filter GPUs by their connection status."""
-    connected_gpus = []
-    
+def write_enable_dsc(dev_path):
+    """Writes to 0x160 to try enabling DSC support."""
     try:
-        result = subprocess.check_output('for dev in /sys/class/drm/*/status; do echo "$(basename $(dirname $dev)) - $(cat $dev)"; done', shell=True, text=True)
-    except subprocess.CalledProcessError as e:
-        sys.exit(f"Error running shell command: {e}")
-    
-    for line in result.splitlines():
-        device, status = line.split(" - ")
-        if "connected" == status and "eDP" not in device:
-            connected_gpus.append(device)
-    
-    if not connected_gpus:
-        sys.exit("No connected monitors found.")
-    
-    return connected_gpus
+        with open(dev_path, "rb+") as f:
+            f.seek(0x160)
+            f.write(bytes([0x01]))
+            print("○ Wrote 0x01 to DPCD 0x160 (forced DSC support flag)")
+    except PermissionError:
+        sys.exit("Permission denied while writing. Please run as root.")
+    except Exception as e:
+        print(f"○ Failed to write: {e}")
 
-if __name__ == "__main__":
+def is_daisy_chain(connector_name):
+    """Returns True if connector name suggests a daisy-chained MST output."""
+    # Examples: card1-DP-1-1, card1-DP-1-2
+    parts = connector_name.split('-')
+    return len(parts) >= 4 and parts[-2].startswith('DP') and parts[-1].isdigit()
 
-    connected_gpus = get_connected_gpus()  # Get only the connected GPUs
+def discover_connected_monitors():
+    """Discover all connected monitors by reading /sys/class/drm/card*-*/status."""
+    connected_monitors = []
+    drm_base = "/sys/class/drm/"
+    connector_paths = glob.glob(os.path.join(drm_base, "card*-*"))
 
-    print(f"Connected Cards: {connected_gpus}")  # Debug output
+    for connector in connector_paths:
+        if "eDP" in connector:
+            continue  # skip internal displays
 
-    gpus = discover_gpu(connected_gpus)  # Discover all GPUs
-    
-    if not connected_gpus:
-        sys.exit("No connected GPUs found.")
-    
-    changed_devices = [] 
+        status_path = os.path.join(connector, "status")
+        aux_glob = os.path.join(connector, "drm_dp_aux*")
 
-    # Process only the connected GPUs
-    for gpu in gpus:
-        device_name = gpu
+        if not os.path.exists(status_path):
+            continue
+
         try:
-            with open(gpu, "r+b") as f:
+            with open(status_path, "r") as f:
+                status = f.read().strip()
+                if status == "connected":
+                    aux_list = glob.glob(aux_glob)
+                    for aux in aux_list:
+                        aux_dev = os.path.join("/dev", os.path.basename(aux))
+                        if os.path.exists(aux_dev):
+                            connected_monitors.append((connector, aux_dev))
+        except Exception:
+            continue
+
+    return connected_monitors
+
+def main():
+    monitors = discover_connected_monitors()
+    if not monitors:
+        sys.exit("No connected external monitors with AUX channels found.")
+
+    for connector, monitor in monitors:
+        print(f"\nChecking {monitor} ({connector})...")
+        try:
+            with open(monitor, "rb") as f:
                 try:
-                    if read_and_update_dpcd_value(f, device_name):
-                        changed_devices.append(device_name)
-                except OSError as e:
+                    supported, raw_val = read_dsc_support(f)
+                    print(f"○ DSC Support: {DSC_FLAGS.get(supported, 'Unknown')} (Raw: {raw_val:#04x})")
+                    
+                    if supported == 0:
+                        if is_daisy_chain(connector):
+                            print("● Daisy-chained monitor detected. Forcing DSC bit enable...")
+                            write_enable_dsc(monitor)
+                            # Re-read after writing
+                            with open(monitor, "rb") as f_verify:
+                                supported_new, raw_val_new = read_dsc_support(f_verify)
+                                print(f"○ New DSC Support status: {DSC_FLAGS.get(supported_new, 'Unknown')} (Raw: {raw_val_new:#04x})")
+                        else:
+                            print("○ DSC not supported and not a daisy-chained monitor. No action taken.")
+                except OSError:
+                    print("○ Could not read DPCD. Try turning the monitor on and retry.")
                     continue
         except PermissionError:
-            sys.exit("Run as root")
-        except OSError as e:
-            continue
+            sys.exit("Permission denied opening AUX. Please run as root.")
 
-    if changed_devices:
-        print("\nDevices with DSC bit changed to 1:")
-        for device in changed_devices:
-            print(f"- {device}")
-    else:
-        print("\nNo devices had the DSC bit changed.")
+if __name__ == "__main__":
+    main()
