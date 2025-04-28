@@ -1,6 +1,6 @@
 # Thunderbolt DSC Monitor Setup
 
-This repository helps automatically **monitor Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
+This repository helps automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
 
 ## Daisy-Chain Scenarios
 
@@ -21,8 +21,8 @@ After **running the DSC script**, both external monitors can operate at **60Hz**
 
 ## How It Works
 
-- **`setup_tbt_monitor.sh`** installs dependencies, copies `monitor_tbt.py` and `dsc.py` into `/opt/tbt-monitor/`, creates a systemd service (`tbt-monitor.service`), and archives the two files into a `.tar.gz`.
-- **`monitor_tbt.py`** listens for Thunderbolt hot-plug events. When a device is plugged in, it calls `dsc.py`.
+- **`setup_tbt_hpd_watcher_service.sh`** installs dependencies, copies `tbt_watcher.py` and `dsc.py` into `/opt/tbt-monitor/`, creates a systemd service (`tbt-monitor.service`), and archives the two files into a `.tar.gz`.
+- **`tbt_watcher.py`** listens for Thunderbolt hot-plug events. When a device is plugged in, it calls `dsc.py`.
 - **`dsc.py`** reads from DPCD address `0x160` (commonly associated with DSC). If DSC is off (`0`), it writes `1` to enable DSC, potentially fixing black screen or 30Hz limitations.
 
 ## Setup Instructions
@@ -30,7 +30,7 @@ After **running the DSC script**, both external monitors can operate at **60Hz**
 1. **Clone or Download** this repository.
 2. **Make the setup script executable**:
    ```bash
-   chmod +x setup_tbt_monitor.sh
+   chmod +x setup_tbt_hpd_watcher_service.sh
 3. **Run the script with sudo**
    ```bash
-   sudo ./setup_tbt_monitor.sh
+   sudo ./setup_tbt_hpd_watcher_service.sh
