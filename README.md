@@ -1,6 +1,6 @@
-# Thunderbolt DSC Monitor Setup
+# Thunderbolt DSC Watcher Setup
 
-This repository helps automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
+This repository automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
 
 ## Daisy-Chain Scenarios
 
