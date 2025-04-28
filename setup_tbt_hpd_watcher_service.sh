@@ -2,13 +2,13 @@
 
 set -e
 
-SERVICE_NAME="tbt-monitor"
-PY_SCRIPT_NAME="monitor_tbt.py"
+SERVICE_NAME="tbt-watcher"
+PY_SCRIPT_NAME="tbt_wacther.py"
 DSC_SCRIPT_NAME="dsc.py"
 UNIT_FILE="${SERVICE_NAME}.service"
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Please run this script as root (e.g., sudo ./setup_tbt_monitor.sh)."
+  echo "Please run this script as root (e.g., sudo ./setup_tbt_hpd_watcher_service.sh)."
   exit 1
 fi
 
