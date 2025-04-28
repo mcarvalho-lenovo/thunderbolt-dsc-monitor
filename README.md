@@ -1,6 +1,10 @@
 # AMD/Lenovo Dockstation - Thunderbolt DSC Watcher Setup
 
-This repository automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo AMD Laptops**, using **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level. Lenovo com
+This repository automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo AMD Laptops**, using **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
+
+**Tested against:**
+   - Ubuntu 22.04
+   - Kernel 6.8.0-58-generic
 
 ## Daisy-Chain Scenarios
 
