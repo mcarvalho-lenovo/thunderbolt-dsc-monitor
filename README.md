@@ -1,6 +1,7 @@
 # AMD/Lenovo Dockstation - Lenovo Dock DSC Auto-Configurator
 
-This repository automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. A common use case is **Lenovo AMD Laptops**, using **Lenovo docks** with a **daisy chain setup**, where you cannot drive two monitors at 60Hz simultaneously unless DSC is enabled at the panel level.
+This repository automatically **watches Thunderbolt hot-plug events** and **enable Display Stream Compression (DSC)** when needed. On Lenovo AMD laptops connected to Lenovo docks using a daisy chain setup, it may not be possible to drive two external monitors at 60Hz simultaneously.
+Forcing DSC activation offers a **palliative workaround** to temporarily restore full resolution and refresh rates, but it is not a definitive solution.
 
 **Tested against:**
    - Ubuntu 22.04
