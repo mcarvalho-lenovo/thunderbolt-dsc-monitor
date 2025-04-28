@@ -8,7 +8,7 @@ import pyudev
 import subprocess
 import os
 
-DSC_SCRIPT_PATH = "/opt/tbt-monitor/dsc.py"
+DSC_SCRIPT_PATH = "/opt/tbt-watcher/dsc.py"
 
 def call_dsc_script():
     if not os.path.isfile(DSC_SCRIPT_PATH):
@@ -44,4 +44,4 @@ if __name__ == "__main__":
     try:
         monitor_tbt_events()
     except KeyboardInterrupt:
-        print("\nExiting monitor_tbt.py...")
+        print("\nExiting tbt_watcher.py...")
