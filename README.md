@@ -5,8 +5,13 @@ Forcing DSC activation offers a **palliative workaround** to temporarily restore
 
 **Tested against:**
    - Ubuntu 22.04
-   - Kernel 6.8.0-58-generic and 6.8.0-60-generic
-   - Models: L14-Gen5-AMD-MT:21L6, P14s-Gen4-AMD-MT:21K,5 P16s-Gen2-AMD-MT:21K9, T16-Gen2-AMD-MT:21K7, Z13_Gen2_AMD_MT:21JV
+   - **Kernel** 6.8.0-58-generic and 6.8.0-60-generic
+   - **Models**:
+   -    L14-Gen5-AMD-MT:21L6
+   -    P14s-Gen4-AMD-MT:21K5
+   -    P16s-Gen2-AMD-MT:21K9
+   -    T16-Gen2-AMD-MT:21K7
+   -    Z13_Gen2_AMD_MT:21JV
 
 ## Daisy-Chain Scenarios
 
